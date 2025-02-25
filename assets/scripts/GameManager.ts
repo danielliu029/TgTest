@@ -24,6 +24,7 @@ export class GameManager extends Component {
     protected onLoad() {
         console.info("onLoad");
         this.initTonConnect();
+        //获取Telegram用户信息，用于小游戏登录，使用user id作为登录的唯一id
         TelegramWebApp.Instance.init().then(res => {
             console.info("telegram web app init : ", res.success);
             this._webAppInitData = TelegramWebApp.Instance.getTelegramWebAppInitData();
@@ -52,11 +53,13 @@ export class GameManager extends Component {
         }
     }
 
+    //Telegram小游戏分享
     public onShare() {
         console.info("share ");
         TelegramWebApp.Instance.share("https://t.me/MyTestGame029Bot/TgTest", "Invite you to play a very interesting game");
     }
 
+    //初始化ton connect ui
     private initTonConnect() {
         this.connectUI = new TonConnectUI({
             manifestUrl: 'https://ton-connect.github.io/demo-dapp-with-wallet/tonconnect-manifest.json'
