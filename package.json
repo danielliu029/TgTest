@@ -1,0 +1,10 @@
+{
+  "name": "TgTest",
+  "uuid": "5c7e6648-1174-4357-bc22-e4d88b41bf25",
+  "creator": {
+    "version": "3.8.5"
+  },
+  "dependencies": {
+    "@ton/cocos-sdk": "^0.0.1-beta.1"
+  }
+}
