@@ -50,7 +50,8 @@ System.register("chunks:///_virtual/GameManager.ts", ['./rollupPluginModLoBabelH
           this.connectLbl.string = this._isConnected ? "Connected" : "Connect";
         }
         onShare() {
-          console.info("share");
+          console.info("share ");
+          TelegramWebApp.Instance.share("https://t.me/MyTestGame029Bot/TgTest", "Invite you to play a very interesting game");
         }
       }, (_descriptor = _applyDecoratedDescriptor(_class2.prototype, "idLbl", [_dec2], {
         configurable: true,
@@ -86,10 +87,121 @@ System.register("chunks:///_virtual/GameManager.ts", ['./rollupPluginModLoBabelH
   };
 });
 
-System.register("chunks:///_virtual/main", ['./telegram-web.ts', './GameManager.ts'], function () {
+System.register("chunks:///_virtual/main", ['./telegram-web.ts', './GameManager.ts', './ResolutionAdjuster.ts'], function () {
   return {
-    setters: [null, null],
+    setters: [null, null, null],
     execute: function () {}
+  };
+});
+
+System.register("chunks:///_virtual/ResolutionAdjuster.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc'], function (exports) {
+  var _applyDecoratedDescriptor, _initializerDefineProperty, cclegacy, CCInteger, CCBoolean, _decorator, Component, View, ResolutionPolicy;
+  return {
+    setters: [function (module) {
+      _applyDecoratedDescriptor = module.applyDecoratedDescriptor;
+      _initializerDefineProperty = module.initializerDefineProperty;
+    }, function (module) {
+      cclegacy = module.cclegacy;
+      CCInteger = module.CCInteger;
+      CCBoolean = module.CCBoolean;
+      _decorator = module._decorator;
+      Component = module.Component;
+      View = module.View;
+      ResolutionPolicy = module.ResolutionPolicy;
+    }],
+    execute: function () {
+      var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _class, _class2, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5;
+      cclegacy._RF.push({}, "b7cf84Lo3lKQaTeZjg7KYPu", "ResolutionAdjuster", undefined);
+      const {
+        ccclass,
+        property
+      } = _decorator;
+      let ResolutionAdjuster = exports('ResolutionAdjuster', (_dec = ccclass('ResolutionAdjuster'), _dec2 = property(CCInteger), _dec3 = property(CCInteger), _dec4 = property(CCInteger), _dec5 = property(CCInteger), _dec6 = property(CCBoolean), _dec(_class = (_class2 = class ResolutionAdjuster extends Component {
+        constructor() {
+          super(...arguments);
+          _initializerDefineProperty(this, "fixedWidthDesignWidth", _descriptor, this);
+          _initializerDefineProperty(this, "fixedWidthDesignHeight", _descriptor2, this);
+          _initializerDefineProperty(this, "fixedHeightDesignWidth", _descriptor3, this);
+          _initializerDefineProperty(this, "fixedHeightDesignHeight", _descriptor4, this);
+          _initializerDefineProperty(this, "isAutoFit", _descriptor5, this);
+        }
+        onLoad() {
+          if (this.isAutoFit) {
+            this.autoFit();
+            window.addEventListener('resize', this.autoFit.bind(this));
+            // Screen.on('orientation-change', this.autoFit.bind(this));
+          }
+        }
+
+        start() {
+          if (this.isAutoFit) {
+            this.autoFit();
+          }
+        }
+        autoFit() {
+          let designSize = View.instance.getDesignResolutionSize();
+          // console.log(`desginSize = ${designSize}`);
+
+          // let visibleSize = View.instance.getVisibleSize();
+          // console.log(`visibleSize = ${visibleSize}`);
+
+          let viewPortRect = View.instance.getViewportRect();
+          View.instance.setOrientation;
+          console.log(`viewPortRect = ${viewPortRect}`);
+          let rateR = designSize.height / designSize.width;
+          let rateV = Math.abs(viewPortRect.size.height) / Math.abs(viewPortRect.size.width);
+
+          // let rp = ResolutionPolicy.FIXED_HEIGHT;
+          // if (rateV < 1.0)
+          // {
+          //     rp = ResolutionPolicy.FIXED_WIDTH;
+          // }
+
+          console.log(`rateV = ${rateV}`);
+          if (rateV < 1.0) {
+            View.instance.setDesignResolutionSize(this.fixedWidthDesignWidth, this.fixedWidthDesignHeight, ResolutionPolicy.FIXED_WIDTH);
+          } else {
+            View.instance.setDesignResolutionSize(this.fixedHeightDesignWidth, this.fixedHeightDesignHeight, ResolutionPolicy.FIXED_HEIGHT);
+          }
+        }
+      }, (_descriptor = _applyDecoratedDescriptor(_class2.prototype, "fixedWidthDesignWidth", [_dec2], {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        initializer: function () {
+          return 1280;
+        }
+      }), _descriptor2 = _applyDecoratedDescriptor(_class2.prototype, "fixedWidthDesignHeight", [_dec3], {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        initializer: function () {
+          return 720;
+        }
+      }), _descriptor3 = _applyDecoratedDescriptor(_class2.prototype, "fixedHeightDesignWidth", [_dec4], {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        initializer: function () {
+          return 720;
+        }
+      }), _descriptor4 = _applyDecoratedDescriptor(_class2.prototype, "fixedHeightDesignHeight", [_dec5], {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        initializer: function () {
+          return 1280;
+        }
+      }), _descriptor5 = _applyDecoratedDescriptor(_class2.prototype, "isAutoFit", [_dec6], {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        initializer: function () {
+          return true;
+        }
+      })), _class2)) || _class));
+      cclegacy._RF.pop();
+    }
   };
 });
 
