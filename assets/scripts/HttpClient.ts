@@ -26,14 +26,14 @@ export class HttpClient {
     }
 
     // GET 请求
-    public static async get<T>(baseUrl: string, path: string, params?: Record<string, any>, authToken?: string) {
+    public static async get<T>(baseUrl: string, path: string, contentType: string, params?: Record<string, any>, authToken?: string) {
         const url = new URL(path, baseUrl);
         if (params) {
             params.forEach(([key, value]) => {
                 url.searchParams.append(key, value as string);
             });
         }
-        var headers = {'Content-Type': 'application/json'};
+        var headers = {'Content-Type': contentType};
         if (authToken) {
             headers['Authorization'] = `Bearer ${authToken}`;
         }
@@ -44,16 +44,16 @@ export class HttpClient {
     }
 
     // POST 请求
-    public static async post<T>(baseUrl: string, path: string, data?: any, authToken?: string) {
+    public static async post<T>(baseUrl: string, path: string, contentType: string, data?: any, authToken?: string) {
         const url = new URL(path, baseUrl);
-        var headers = {'Content-Type': 'application/json'};
+        var headers = {'Content-Type': contentType};
         if (authToken) {
             headers['Authorization'] = `Bearer ${authToken}`;
         }
         return HttpClient.request<T>(url, {
             method: 'POST',
             headers: headers,
-            body: JSON.stringify(data),
+            body: contentType == "application/json" ? JSON.stringify(data) : data,
         });
     }
 }

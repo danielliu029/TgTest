@@ -64,7 +64,7 @@ export class GameManager extends Component {
 
             this.initDataLbl.string = "Init Data: " + TelegramWebApp.Instance.getTelegramInitData();
             console.info("Init Data: " + TelegramWebApp.Instance.getTelegramInitData());
-
+            //this.tgTestLogin();
         });
     }
 
@@ -133,12 +133,19 @@ export class GameManager extends Component {
 
     private async tgTestLogin() {
         //for test telegram 授权登录接口
-        var data = {"id": "1", "first_name": "daniel", "last_name": "liu", "username": "daniel_liu029"};
         try {
-            var response = await HttpClient.post<ResponseUser>(this._base_url, this._tg_auth_url, data);
+            const data = new URLSearchParams();
+            data.append('id', '1');
+            data.append('first_name', 'daniel');
+            data.append('last_name', 'liu');
+            data.append('username', 'daniel_liu029');
+            console.info(data.toString());
+            console.info(encodeURIComponent(data.toString()));
+
+            var response = await HttpClient.post<ResponseUser>(this._base_url, this._tg_auth_url, "application/x-www-form-urlencoded", data);
             console.info(response.user.token);
 
-            var response2 = await HttpClient.get<ResponseProtected>(this._base_url, "/protected", null, response.user.token);
+            var response2 = await HttpClient.get<ResponseProtected>(this._base_url, "/protected", "application/json", null, response.user.token);
             console.info(response2.message);
         } catch(error) {
             console.error(error);
