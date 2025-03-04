@@ -1,5 +1,5 @@
-System.register("chunks:///_virtual/GameManager.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './telegram-web.ts', './index.ts'], function (exports) {
-  var _applyDecoratedDescriptor, _initializerDefineProperty, cclegacy, Label, _decorator, Component, TelegramWebApp, __webpack_exports__TonConnectUI, __webpack_exports__Address;
+System.register("chunks:///_virtual/GameManager.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './telegram-web.ts', './index.ts', './HttpClient.ts'], function (exports) {
+  var _applyDecoratedDescriptor, _initializerDefineProperty, cclegacy, Label, _decorator, Component, TelegramWebApp, __webpack_exports__TonConnectUI, __webpack_exports__Address, HttpClient;
   return {
     setters: [function (module) {
       _applyDecoratedDescriptor = module.applyDecoratedDescriptor;
@@ -14,36 +14,44 @@ System.register("chunks:///_virtual/GameManager.ts", ['./rollupPluginModLoBabelH
     }, function (module) {
       __webpack_exports__TonConnectUI = module.TonConnectUI;
       __webpack_exports__Address = module.Address;
+    }, function (module) {
+      HttpClient = module.HttpClient;
     }],
     execute: function () {
-      var _dec, _dec2, _dec3, _dec4, _dec5, _class, _class2, _descriptor, _descriptor2, _descriptor3, _descriptor4;
+      var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _class, _class2, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5;
       cclegacy._RF.push({}, "117edbO4YZJoriXQWLvebhl", "GameManager", undefined);
       const {
         ccclass,
         property
       } = _decorator;
-      let GameManager = exports('GameManager', (_dec = ccclass('GameManager'), _dec2 = property(Label), _dec3 = property(Label), _dec4 = property(Label), _dec5 = property(Label), _dec(_class = (_class2 = class GameManager extends Component {
+      let GameManager = exports('GameManager', (_dec = ccclass('GameManager'), _dec2 = property(Label), _dec3 = property(Label), _dec4 = property(Label), _dec5 = property(Label), _dec6 = property(Label), _dec(_class = (_class2 = class GameManager extends Component {
         constructor() {
           super(...arguments);
           _initializerDefineProperty(this, "idLbl", _descriptor, this);
           _initializerDefineProperty(this, "nameLbl", _descriptor2, this);
           _initializerDefineProperty(this, "addressLbl", _descriptor3, this);
           _initializerDefineProperty(this, "connectLbl", _descriptor4, this);
+          _initializerDefineProperty(this, "initDataLbl", _descriptor5, this);
           this.connectUI = null;
-          this._webAppInitData = null;
+          this._base_url = "http://127.0.0.1:5000";
+          //"https://alpha.audiera.fi:5000/api/";
+          this._tg_auth_url = "/auth/telegram";
         }
         onLoad() {
           console.info("onLoad");
           this.initTonConnect();
+          //获取Telegram用户信息，用于小游戏登录，使用user id作为登录的唯一id
           TelegramWebApp.Instance.init().then(res => {
             console.info("telegram web app init : ", res.success);
-            this._webAppInitData = TelegramWebApp.Instance.getTelegramWebAppInitData();
-            console.info(this._webAppInitData);
-            console.info(this._webAppInitData.user);
-            if (this._webAppInitData && this._webAppInitData.user) {
-              this.idLbl.string = "Id: " + this._webAppInitData.user.id; //telegram用户唯一id，可以用于tg小游戏登录
-              this.nameLbl.string = "UserName: " + this._webAppInitData.user.username;
+            var webAppInitData = TelegramWebApp.Instance.getTelegramWebAppInitData();
+            console.info(webAppInitData);
+            console.info(webAppInitData.user);
+            if (webAppInitData && webAppInitData.user) {
+              this.idLbl.string = "Id: " + webAppInitData.user.id; //telegram用户唯一id，可以用于tg小游戏登录
+              this.nameLbl.string = "UserName: " + webAppInitData.user.username;
             }
+            this.initDataLbl.string = "Init Data: " + TelegramWebApp.Instance.getTelegramInitData();
+            console.info("Init Data: " + TelegramWebApp.Instance.getTelegramInitData());
           });
         }
         start() {}
@@ -55,10 +63,14 @@ System.register("chunks:///_virtual/GameManager.ts", ['./rollupPluginModLoBabelH
             this.connectUI.openModal();
           }
         }
+
+        //Telegram小游戏分享
         onShare() {
           console.info("share ");
           TelegramWebApp.Instance.share("https://t.me/MyTestGame029Bot/TgTest", "Invite you to play a very interesting game");
         }
+
+        //初始化ton connect ui
         initTonConnect() {
           this.connectUI = new __webpack_exports__TonConnectUI({
             manifestUrl: 'https://ton-connect.github.io/demo-dapp-with-wallet/tonconnect-manifest.json'
@@ -99,6 +111,24 @@ System.register("chunks:///_virtual/GameManager.ts", ['./rollupPluginModLoBabelH
             this.addressLbl.string = "Address: ";
           }
         }
+        async tgTestLogin() {
+          //for test telegram 授权登录接口
+          var data = {
+            "id": "1",
+            "first_name": "daniel",
+            "last_name": "liu",
+            "username": "daniel_liu029"
+          };
+          try {
+            var response = await HttpClient.post(this._base_url, this._tg_auth_url, data);
+            console.info(response.user.token);
+            var response2 = await HttpClient.get(this._base_url, "/protected", null, response.user.token);
+            console.info(response2.message);
+          } catch (error) {
+            console.error(error);
+          }
+          // 
+        }
       }, (_descriptor = _applyDecoratedDescriptor(_class2.prototype, "idLbl", [_dec2], {
         configurable: true,
         enumerable: true,
@@ -127,15 +157,90 @@ System.register("chunks:///_virtual/GameManager.ts", ['./rollupPluginModLoBabelH
         initializer: function () {
           return null;
         }
+      }), _descriptor5 = _applyDecoratedDescriptor(_class2.prototype, "initDataLbl", [_dec6], {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        initializer: function () {
+          return null;
+        }
       })), _class2)) || _class));
       cclegacy._RF.pop();
     }
   };
 });
 
-System.register("chunks:///_virtual/main", ['./telegram-web.ts', './GameManager.ts', './ResolutionAdjuster.ts'], function () {
+System.register("chunks:///_virtual/HttpClient.ts", ['cc'], function (exports) {
+  var cclegacy;
   return {
-    setters: [null, null, null],
+    setters: [function (module) {
+      cclegacy = module.cclegacy;
+    }],
+    execute: function () {
+      cclegacy._RF.push({}, "22ff5UbR0NNAKksBaoUPD1t", "HttpClient", undefined);
+      class HttpClient {
+        /**
+         * GET 请求
+         */
+        static async request(url, options) {
+          try {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+              throw new Error(`请求失败: ${response.status} - ${response.statusText}`);
+            }
+            return await response.json();
+          } catch (error) {
+            console.error('网络请求错误:', error);
+            throw error;
+          }
+        }
+
+        // GET 请求
+        static async get(baseUrl, path, params, authToken) {
+          const url = new URL(path, baseUrl);
+          if (params) {
+            params.forEach(_ref => {
+              let [key, value] = _ref;
+              url.searchParams.append(key, value);
+            });
+          }
+          var headers = {
+            'Content-Type': 'application/json'
+          };
+          if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+          }
+          return HttpClient.request(url, {
+            method: 'GET',
+            headers: headers
+          });
+        }
+
+        // POST 请求
+        static async post(baseUrl, path, data, authToken) {
+          const url = new URL(path, baseUrl);
+          var headers = {
+            'Content-Type': 'application/json'
+          };
+          if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+          }
+          return HttpClient.request(url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(data)
+          });
+        }
+      }
+      exports('HttpClient', HttpClient);
+      cclegacy._RF.pop();
+    }
+  };
+});
+
+System.register("chunks:///_virtual/main", ['./telegram-web.ts', './GameManager.ts', './HttpClient.ts', './ResolutionAdjuster.ts'], function () {
+  return {
+    setters: [null, null, null, null],
     execute: function () {}
   };
 });

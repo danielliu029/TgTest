@@ -1,8 +1,30 @@
 import { _decorator, Component, Label, Button, Node } from 'cc';
 import { TelegramWebApp, WebAppInitData } from '../cocos-telegram-miniapps/scripts/telegram-web';
 import { TonConnectUI, Address } from '@ton/cocos-sdk';
+import { HttpClient } from './HttpClient';
 
 const { ccclass, property } = _decorator;
+
+interface ResponseUser {
+    status: string;
+    message?: string;
+    user?: User;
+}
+
+interface ResponseProtected {
+    message?: string;
+    user?: User;
+}
+
+interface User {
+    id: string;
+    first_name: string;
+    last_name: string;
+    username: string;
+    photo_url: string;
+    auth_date: string;
+    token: string;
+}
 
 @ccclass('GameManager')
 export class GameManager extends Component {
@@ -18,8 +40,13 @@ export class GameManager extends Component {
     @property(Label)
     connectLbl: Label = null;
 
+    @property(Label)
+    initDataLbl: Label = null;
+
     protected connectUI: TonConnectUI = null;
-    private _webAppInitData: WebAppInitData = null;
+
+    private _base_url: string = "http://127.0.0.1:5000"; //"https://alpha.audiera.fi:5000/api/";
+    private _tg_auth_url: string = "/auth/telegram"
 
     protected onLoad() {
         console.info("onLoad");
@@ -27,13 +54,17 @@ export class GameManager extends Component {
         //获取Telegram用户信息，用于小游戏登录，使用user id作为登录的唯一id
         TelegramWebApp.Instance.init().then(res => {
             console.info("telegram web app init : ", res.success);
-            this._webAppInitData = TelegramWebApp.Instance.getTelegramWebAppInitData();
-            console.info(this._webAppInitData);
-            console.info(this._webAppInitData.user);
-            if (this._webAppInitData && this._webAppInitData.user) {
-                this.idLbl.string = "Id: " + this._webAppInitData.user.id; //telegram用户唯一id，可以用于tg小游戏登录
-                this.nameLbl.string = "UserName: " + this._webAppInitData.user.username;
-            } 
+            var webAppInitData = TelegramWebApp.Instance.getTelegramWebAppInitData();
+            console.info(webAppInitData);
+            console.info(webAppInitData.user);
+            if (webAppInitData && webAppInitData.user) {
+                this.idLbl.string = "Id: " + webAppInitData.user.id; //telegram用户唯一id，可以用于tg小游戏登录
+                this.nameLbl.string = "UserName: " + webAppInitData.user.username;
+            }
+
+            this.initDataLbl.string = "Init Data: " + TelegramWebApp.Instance.getTelegramInitData();
+            console.info("Init Data: " + TelegramWebApp.Instance.getTelegramInitData());
+
         });
     }
 
@@ -98,6 +129,21 @@ export class GameManager extends Component {
             this.connectLbl.string = "Connect";
             this.addressLbl.string = "Address: ";
         }
+    }
+
+    private async tgTestLogin() {
+        //for test telegram 授权登录接口
+        var data = {"id": "1", "first_name": "daniel", "last_name": "liu", "username": "daniel_liu029"};
+        try {
+            var response = await HttpClient.post<ResponseUser>(this._base_url, this._tg_auth_url, data);
+            console.info(response.user.token);
+
+            var response2 = await HttpClient.get<ResponseProtected>(this._base_url, "/protected", null, response.user.token);
+            console.info(response2.message);
+        } catch(error) {
+            console.error(error);
+        }
+        // 
     }
     
 }
