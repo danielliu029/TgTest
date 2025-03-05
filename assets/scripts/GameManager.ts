@@ -165,6 +165,7 @@ export class GameManager extends Component {
             console.info(response2.message);
         } catch(error) {
             console.error(error);
+            this.initDataLbl.string = "error: " + error.toString();
         }
     }
     
