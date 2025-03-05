@@ -62,7 +62,7 @@ export class GameManager extends Component {
                 this.nameLbl.string = "UserName: " + webAppInitData.user.username;
             }
 
-            this.initDataLbl.string = "Init Data: " + TelegramWebApp.Instance.getTelegramInitData();
+            this.initDataLbl.string = "Init Data: " + decodeURIComponent(TelegramWebApp.Instance.getTelegramInitData());
             //this.tgLogin(TelegramWebApp.Instance.getTelegramInitData());
         });
     }
