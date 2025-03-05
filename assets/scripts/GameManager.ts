@@ -163,7 +163,7 @@ export class GameManager extends Component {
 
             var response2 = await HttpClient.get<ResponseProtected>(this._base_url, "/api/protected", "application/json", null, response.user.token);
             console.info(response2.message);
-            this.initDataLbl.string = "response2.message";
+            this.initDataLbl.string = response2.message;
         } catch(error) {
             console.error(error);
             this.initDataLbl.string = "error: " + error.toString();
