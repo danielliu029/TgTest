@@ -45,8 +45,8 @@ export class GameManager extends Component {
 
     protected connectUI: TonConnectUI = null;
 
-    private _base_url: string = "https://alpha.audiera.fi:5000/api/";
-    private _tg_auth_url: string = "/auth/telegram"
+    private _base_url: string = "https://alpha.audiera.fi";
+    private _tg_auth_url: string = "/api/auth/telegram"
 
     protected onLoad() {
         console.info("onLoad");
@@ -63,7 +63,7 @@ export class GameManager extends Component {
             }
 
             this.initDataLbl.string = "Init Data: " + decodeURIComponent(TelegramWebApp.Instance.getTelegramInitData());
-            //this.tgLogin(TelegramWebApp.Instance.getTelegramInitData());
+            this.tgLogin(TelegramWebApp.Instance.getTelegramInitData());
         });
     }
 
@@ -156,11 +156,12 @@ export class GameManager extends Component {
 
     private async tgLogin(initData:string) {
         try {
+            console.info("tg login: ", initData);
             var response = await HttpClient.post<ResponseUser>(this._base_url, this._tg_auth_url, "application/x-www-form-urlencoded", initData);
             console.info(response.user.token);
             this.initDataLbl.string = "token: " + response.user.token;
 
-            var response2 = await HttpClient.get<ResponseProtected>(this._base_url, "/protected", "application/json", null, response.user.token);
+            var response2 = await HttpClient.get<ResponseProtected>(this._base_url, "/api/protected", "application/json", null, response.user.token);
             console.info(response2.message);
         } catch(error) {
             console.error(error);
