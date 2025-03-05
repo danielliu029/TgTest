@@ -45,7 +45,7 @@ export class GameManager extends Component {
 
     protected connectUI: TonConnectUI = null;
 
-    private _base_url: string = "http://127.0.0.1:5000"; //"https://alpha.audiera.fi:5000/api/";
+    private _base_url: string = "https://alpha.audiera.fi:5000/api/";
     private _tg_auth_url: string = "/auth/telegram"
 
     protected onLoad() {
@@ -63,8 +63,7 @@ export class GameManager extends Component {
             }
 
             this.initDataLbl.string = "Init Data: " + TelegramWebApp.Instance.getTelegramInitData();
-            console.info("Init Data: " + TelegramWebApp.Instance.getTelegramInitData());
-            //this.tgTestLogin();
+            //this.tgLogin(TelegramWebApp.Instance.getTelegramInitData());
         });
     }
 
@@ -134,13 +133,15 @@ export class GameManager extends Component {
     private async tgTestLogin() {
         //for test telegram 授权登录接口
         try {
-            const data = new URLSearchParams();
+            /*const data = new URLSearchParams();
             data.append('id', '1');
             data.append('first_name', 'daniel');
             data.append('last_name', 'liu');
             data.append('username', 'daniel_liu029');
             console.info(data.toString());
-            console.info(encodeURIComponent(data.toString()));
+            console.info(encodeURIComponent(data.toString()));*/
+            var data = 'user=' + encodeURIComponent('{"id":1,"first_name":"daniel","last_name":"liu","username":"daniel_liu029"}') + '&auth_date=1&hash=2&signature=3';
+            console.info(data);
 
             var response = await HttpClient.post<ResponseUser>(this._base_url, this._tg_auth_url, "application/x-www-form-urlencoded", data);
             console.info(response.user.token);
@@ -151,6 +152,19 @@ export class GameManager extends Component {
             console.error(error);
         }
         // 
+    }
+
+    private async tgLogin(initData:string) {
+        try {
+            var response = await HttpClient.post<ResponseUser>(this._base_url, this._tg_auth_url, "application/x-www-form-urlencoded", initData);
+            console.info(response.user.token);
+            this.initDataLbl.string = "token: " + response.user.token;
+
+            var response2 = await HttpClient.get<ResponseProtected>(this._base_url, "/protected", "application/json", null, response.user.token);
+            console.info(response2.message);
+        } catch(error) {
+            console.error(error);
+        }
     }
     
 }
