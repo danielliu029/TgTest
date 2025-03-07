@@ -116,7 +116,7 @@ export class GameManager extends Component {
     }
 
     public onConnect() {
-        if (this.isConnected()) {
+        if (this.isConnected(true)) {
             this.doDisconnect();
         } else {
             this.connectUI.openModal();
@@ -153,17 +153,18 @@ export class GameManager extends Component {
             console.log("wallet info status changed : ", info);
             this.updateConnect();
         });
-        this.updateConnect();
     }
 
-    private isConnected(): boolean {
+    private isConnected(checkBindWallet:boolean): boolean {
         if (!this.connectUI) {
             console.error("ton ui not inited!");
             return false;
         }
 
-        if (this._user != null && this._user.ton_wallet != "") {
-            return true;
+        if (checkBindWallet) {
+            if (this._user != null && this._user.ton_wallet != "") {
+                return true;
+            }
         }
 
         return this.connectUI.connected;
@@ -182,7 +183,7 @@ export class GameManager extends Component {
 
     // Get the wallet address after successful connection
     private async updateConnect() {
-        if (this.isConnected()) {
+        if (this.isConnected(false)) {
             //用户连接的钱包地址
             var strAddress: string = Address.parseRaw(this.connectUI.account.address).toString({ testOnly: false, bounceable: false });
             this._user.ton_wallet = await this.bindTonWallet(strAddress);
@@ -208,7 +209,7 @@ export class GameManager extends Component {
         }
         
         this.addressLbl.string = "Address: " + this._user.ton_wallet;
-        this.connectLbl.string = this.isConnected() ? "Connected" : "Connect";
+        this.connectLbl.string = this.isConnected(true) ? "Connected" : "Connect";
         this.pointsLbl.string = "Points: " + this._user.points.toString();
     }
 
