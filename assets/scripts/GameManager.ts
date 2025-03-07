@@ -77,7 +77,7 @@ export class GameManager extends Component {
 
 
     private static _local_host: boolean = false;
-    private static _test_login: boolean = true;
+    private static _test_login: boolean = false;
     private _base_url: string = GameManager._local_host ? "http://127.0.0.1:5000" : "https://alpha.audiera.fi";
     private _login_path: string = "/api/auth/telegram"; //登录接口
     private _test_login_path: string = "/api/test/telegram"; //测试无需验证登录接口
