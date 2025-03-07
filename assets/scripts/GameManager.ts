@@ -1,29 +1,50 @@
-import { _decorator, Component, Label, Button, Node } from 'cc';
+import { _decorator, Component, Label, Button, Node, randomRangeInt } from 'cc';
 import { TelegramWebApp, WebAppInitData } from '../cocos-telegram-miniapps/scripts/telegram-web';
 import { TonConnectUI, Address } from '@ton/cocos-sdk';
 import { HttpClient } from './HttpClient';
 
 const { ccclass, property } = _decorator;
 
-interface ResponseUser {
+interface ResponseLogin {
     status: string;
-    message?: string;
     user?: User;
-}
-
-interface ResponseProtected {
+    token?: string; //授权token
     message?: string;
-    user?: User;
+    code?: number;
 }
 
 interface User {
-    id: string;
+    tg_id: number; //telegram 用户唯一id
+    username: string; 
     first_name: string;
     last_name: string;
-    username: string;
     photo_url: string;
-    auth_date: string;
-    token: string;
+    ton_wallet: string;
+    points: number;  //用户游戏累积积分
+    referral_tg_id: number; //推荐者tg id
+    acc_referral_points: number;  //累积推荐所获得的积分奖励
+    acc_referral_number: number;  //累积推荐的人数
+    last_interaction: number; //最后一次交互时间
+}
+
+interface ResponseBindWallet {
+    status: string;
+    wallet?: string;
+    message?: string;
+    code?: number;
+}
+
+interface ResponseUnBindWallet {
+    status: string;
+    message?: string;
+    code?: number;
+}
+
+interface ResponseDanceEnd {
+    status: string;
+    points?: number;
+    message?: string;
+    code?: number;
 }
 
 @ccclass('GameManager')
@@ -38,33 +59,51 @@ export class GameManager extends Component {
     addressLbl: Label = null;
 
     @property(Label)
+    pointsLbl: Label = null;
+
+    @property(Label)
     connectLbl: Label = null;
 
     @property(Label)
-    initDataLbl: Label = null;
+    debugInfo: Label = null;
+
+    @property(Button)
+    connectButton: Button = null;
+
+    @property(Button)
+    danceEndButton: Button = null;
 
     protected connectUI: TonConnectUI = null;
 
-    private _base_url: string = "https://alpha.audiera.fi";
-    private _tg_auth_url: string = "/api/auth/telegram"
+
+    private static _local_test: boolean = false;
+    private _base_url: string = GameManager._local_test ? "http://127.0.0.1:5000" : "https://alpha.audiera.fi";
+    private _login_path: string = "/api/auth/telegram"; //登录接口
+    private _test_login_path: string = "/api/test/telegram"; //测试无需验证登录接口
+    private _bind_ton_wallet_path: string = "/api/bindTonWallet"; //绑定ton 钱包接口
+    private _unbind_ton_wallet_path: string = "/api/unbindTonWallet"; //解绑ton 钱包接口
+    private _dance_end_path: string = "/api/danceEnd"; //跳舞结束统计积分接口
+    private _user: User = null;
+    private _token: string = "";
 
     protected onLoad() {
         console.info("onLoad");
-        this.initTonConnect();
-        //获取Telegram用户信息，用于小游戏登录，使用user id作为登录的唯一id
-        TelegramWebApp.Instance.init().then(res => {
-            console.info("telegram web app init : ", res.success);
-            var webAppInitData = TelegramWebApp.Instance.getTelegramWebAppInitData();
-            console.info(webAppInitData);
-            console.info(webAppInitData.user);
-            if (webAppInitData && webAppInitData.user) {
-                this.idLbl.string = "Id: " + webAppInitData.user.id; //telegram用户唯一id，可以用于tg小游戏登录
-                this.nameLbl.string = "UserName: " + webAppInitData.user.username;
-            }
-
-            this.initDataLbl.string = "Init Data: " + decodeURIComponent(TelegramWebApp.Instance.getTelegramInitData());
-            this.tgLogin(TelegramWebApp.Instance.getTelegramInitData());
-        });
+        if (GameManager._local_test) {
+            this.testLogin();
+            this.connectButton.enabled = false;
+        } else {
+            this.connectButton.enabled = true;
+            this.initTonConnect();
+            //获取Telegram用户信息，用于小游戏登录，使用user id作为登录的唯一id
+            TelegramWebApp.Instance.init().then(res => {
+                console.info("telegram web app init : ", res.success);
+                var webAppInitData = TelegramWebApp.Instance.getTelegramWebAppInitData();
+                console.info(webAppInitData);
+                console.info(webAppInitData.user);
+                this.debugInfo.string = "Init Data: " + decodeURIComponent(TelegramWebApp.Instance.getTelegramInitData());
+                this.tgLogin(TelegramWebApp.Instance.getTelegramInitData());
+            });   
+        }
     }
 
     start() {
@@ -81,6 +120,12 @@ export class GameManager extends Component {
         } else {
             this.connectUI.openModal();
         }
+    }
+
+    public onDanceEnd() {
+        //for test
+        this.danceEnd(200);
+        //--
     }
 
     //Telegram小游戏分享
@@ -115,60 +160,113 @@ export class GameManager extends Component {
             console.error("ton ui not inited!");
             return false;
         }
+
+        if (this._user != null && this._user.ton_wallet != "") {
+            return true;
+        }
+
         return this.connectUI.connected;
     }
 
     // Get the wallet address after successful connection
-    private updateConnect() {
+    private async updateConnect() {
         if (this.isConnected()) {
-            const address = this.connectUI.account.address; //用户连接的钱包地址
-            this.addressLbl.string = "Address: " + Address.parseRaw(address).toString({ testOnly: false, bounceable: false });
+            //用户连接的钱包地址
+            var strAddress: string = Address.parseRaw(this.connectUI.account.address).toString({ testOnly: false, bounceable: false });
+            this._user.ton_wallet = await this.bindTonWallet(strAddress);
+            this.addressLbl.string = "Address: " + this._user.ton_wallet;
             this.connectLbl.string = "Connected";
         } else {
-            this.connectLbl.string = "Connect";
+            await this.unbindWallet();
+            this._user.ton_wallet = "";
             this.addressLbl.string = "Address: ";
+            this.connectLbl.string = "Connect";
         }
     }
 
-    private async tgTestLogin() {
-        //for test telegram 授权登录接口
+    private setUserInfo(response: ResponseLogin) {
+        this._user = response.user;
+        this._token = response.token;
+        this.idLbl.string = this._user.tg_id.toString();
+        //优先显示username
+        if (this._user.username != "") {
+            this.nameLbl.string = this._user.username;
+        } else {
+            this.nameLbl.string = this._user.first_name + " " + this._user.last_name;
+        }
+        
+        this.addressLbl.string = "Address: " + this._user.ton_wallet;
+        this.connectLbl.string = this.isConnected() ? "Connected" : "Connect";
+        this.pointsLbl.string = "Points: " + this._user.points.toString();
+    }
+
+    //以下接口请求
+    //test登录接口, 无需授权
+    private async testLogin() {
         try {
-            /*const data = new URLSearchParams();
-            data.append('id', '1');
-            data.append('first_name', 'daniel');
-            data.append('last_name', 'liu');
-            data.append('username', 'daniel_liu029');
-            console.info(data.toString());
-            console.info(encodeURIComponent(data.toString()));*/
-            var data = 'user=' + encodeURIComponent('{"id":1,"first_name":"daniel","last_name":"liu","username":"daniel_liu029"}') + '&auth_date=1&hash=2&signature=3';
+            var data = 'user=' + encodeURIComponent('{"id":1,"first_name":"yingbin","last_name":"liu","username":"daniel029"}') + '&auth_date=1&hash=2&signature=3';
             console.info(data);
 
-            var response = await HttpClient.post<ResponseUser>(this._base_url, this._tg_auth_url, "application/x-www-form-urlencoded", data);
-            console.info(response.user.token);
-
-            var response2 = await HttpClient.get<ResponseProtected>(this._base_url, "/protected", "application/json", null, response.user.token);
-            console.info(response2.message);
+            var response = await HttpClient.post<ResponseLogin>(this._base_url, this._test_login_path, "application/x-www-form-urlencoded", data);
+            this.setUserInfo(response);
         } catch(error) {
             console.error(error);
         }
-        // 
     }
 
+    //正式的telegram小游戏授权登录接口
     private async tgLogin(initData:string) {
         try {
             console.info("tg login: ", initData);
-            var response = await HttpClient.post<ResponseUser>(this._base_url, this._tg_auth_url, "application/x-www-form-urlencoded", initData);
-            console.info(response.user.token);
-            this.initDataLbl.string = "token: " + response.user.token;
-
-            var response2 = await HttpClient.get<ResponseProtected>(this._base_url, "/api/protected", "application/json", null, response.user.token);
-            console.info(response2.message);
-            this.initDataLbl.string = response2.message;
+            var response = await HttpClient.post<ResponseLogin>(this._base_url, this._login_path, "application/x-www-form-urlencoded", initData);
+            this.setUserInfo(response);
         } catch(error) {
             console.error(error);
-            this.initDataLbl.string = "error: " + error.toString();
+            this.debugInfo.string = "error: " + error.toString();
         }
     }
-    
+
+    //绑定钱包接口
+    private async bindTonWallet(wallet:string) {
+        try {
+            console.info("bindWallet: ", wallet);
+            var dic = {
+                "wallet": wallet
+            }
+            var response = await HttpClient.post<ResponseBindWallet>(this._base_url, this._bind_ton_wallet_path, "application/json", dic, this._token);
+            return response.wallet;
+
+        } catch(error) {
+            console.error(error);
+            this.debugInfo.string = "error: " + error.toString();
+        }
+    }
+
+    //取消绑定接口
+    private async unbindWallet() {
+        try {
+            console.info("unBindWallet");
+            await HttpClient.post<ResponseUnBindWallet>(this._base_url, this._unbind_ton_wallet_path, "application/json", {}, this._token);
+        } catch(error) {
+            console.error(error);
+            this.debugInfo.string = "error: " + error.toString();
+        }
+    }
+
+    //跳舞接受后积分统计接口
+    private async danceEnd(addPoints: number) {
+        try {
+            console.info("danceEnd: ", addPoints);
+            var dic = {
+                "points": addPoints
+            }
+            var response = await HttpClient.post<ResponseDanceEnd>(this._base_url, this._dance_end_path, "application/json", dic, this._token);
+            this._user.points = response.points;
+            this.pointsLbl.string = "Points: " + this._user.points.toString();
+        } catch(error) {
+            console.error(error);
+            this.debugInfo.string = "error: " + error.toString();
+        }
+    }
 }
 
