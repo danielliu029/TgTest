@@ -1276,7 +1276,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": -320,
-      "y": -40,
+      "y": -480,
       "z": 0
     },
     "_lrot": {
@@ -1320,7 +1320,7 @@
     "_anchorPoint": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": 0.5
+      "y": 0
     },
     "_id": "ffTTbcQxRLfKapAHjQGk/s"
   },

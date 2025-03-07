@@ -99,6 +99,7 @@ export class GameManager extends Component {
             TelegramWebApp.Instance.init().then(res => {
                 console.info("telegram web app init : ", res.success);
                 console.info("Init Data: " + decodeURIComponent(TelegramWebApp.Instance.getTelegramInitData()));
+                this.debugInfo.string = "Init Data: " + decodeURIComponent(TelegramWebApp.Instance.getTelegramInitData());
                 this.tgLogin(TelegramWebApp.Instance.getTelegramInitData());
             });   
         }
@@ -129,7 +130,7 @@ export class GameManager extends Component {
     //Telegram小游戏分享
     public onShare() {
         console.info("share ");
-        TelegramWebApp.Instance.share("https://t.me/MyTestGame029Bot/TgTest", "Invite you to play a very interesting game");
+        TelegramWebApp.Instance.share("https://t.me/MyTestGame029Bot/TgTest?start=invite_" + this._user.tg_id, "Invite you to play a very interesting game");
     }
 
     //初始化ton connect ui
