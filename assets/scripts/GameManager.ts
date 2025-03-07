@@ -76,8 +76,9 @@ export class GameManager extends Component {
     protected connectUI: TonConnectUI = null;
 
 
-    private static _local_test: boolean = false;
-    private _base_url: string = GameManager._local_test ? "http://127.0.0.1:5000" : "https://alpha.audiera.fi";
+    private static _local_host: boolean = false;
+    private static _test_login: boolean = true;
+    private _base_url: string = GameManager._local_host ? "http://127.0.0.1:5000" : "https://alpha.audiera.fi";
     private _login_path: string = "/api/auth/telegram"; //登录接口
     private _test_login_path: string = "/api/test/telegram"; //测试无需验证登录接口
     private _bind_ton_wallet_path: string = "/api/bindTonWallet"; //绑定ton 钱包接口
@@ -88,7 +89,7 @@ export class GameManager extends Component {
 
     protected onLoad() {
         console.info("onLoad");
-        if (GameManager._local_test) {
+        if (GameManager._test_login) {
             this.testLogin();
             this.connectButton.enabled = false;
         } else {
