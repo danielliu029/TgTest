@@ -99,7 +99,6 @@ export class GameManager extends Component {
             TelegramWebApp.Instance.init().then(res => {
                 console.info("telegram web app init : ", res.success);
                 console.info("Init Data: " + decodeURIComponent(TelegramWebApp.Instance.getTelegramInitData()));
-                this.debugInfo.string = "Init Data: " + decodeURIComponent(TelegramWebApp.Instance.getTelegramInitData());
                 this.tgLogin(TelegramWebApp.Instance.getTelegramInitData());
             });   
         }
