@@ -98,10 +98,7 @@ export class GameManager extends Component {
             //获取Telegram用户信息，用于小游戏登录，使用user id作为登录的唯一id
             TelegramWebApp.Instance.init().then(res => {
                 console.info("telegram web app init : ", res.success);
-                var webAppInitData = TelegramWebApp.Instance.getTelegramWebAppInitData();
-                console.info(webAppInitData);
-                console.info(webAppInitData.user);
-                this.debugInfo.string = "Init Data: " + decodeURIComponent(TelegramWebApp.Instance.getTelegramInitData());
+                console.info("Init Data: " + decodeURIComponent(TelegramWebApp.Instance.getTelegramInitData()));
                 this.tgLogin(TelegramWebApp.Instance.getTelegramInitData());
             });   
         }
@@ -200,12 +197,12 @@ export class GameManager extends Component {
     private setUserInfo(response: ResponseLogin) {
         this._user = response.user;
         this._token = response.token;
-        this.idLbl.string = this._user.tg_id.toString();
+        this.idLbl.string = "id: " + this._user.tg_id.toString();
         //优先显示username
         if (this._user.username != "") {
-            this.nameLbl.string = this._user.username;
+            this.nameLbl.string = "name: " + this._user.username;
         } else {
-            this.nameLbl.string = this._user.first_name + " " + this._user.last_name;
+            this.nameLbl.string = "name: " + this._user.first_name + " " + this._user.last_name;
         }
         
         this.addressLbl.string = "Address: " + this._user.ton_wallet;
