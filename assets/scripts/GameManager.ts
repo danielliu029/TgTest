@@ -210,6 +210,7 @@ export class GameManager extends Component {
 
             var response = await HttpClient.post<ResponseLogin>(this._base_url, this._test_login_path, "application/x-www-form-urlencoded", data);
             this.setUserInfo(response);
+            this.debugInfo.string = "";
         } catch(error) {
             console.error(error);
         }
@@ -221,6 +222,7 @@ export class GameManager extends Component {
             console.info("tg login: ", initData);
             var response = await HttpClient.post<ResponseLogin>(this._base_url, this._login_path, "application/x-www-form-urlencoded", initData);
             this.setUserInfo(response);
+            this.debugInfo.string = "";
         } catch(error) {
             console.error(error);
             this.debugInfo.string = "error: " + error.toString();
@@ -230,11 +232,16 @@ export class GameManager extends Component {
     //绑定钱包接口
     private async bindTonWallet(wallet:string) {
         try {
+            if (this._token == "") {
+                return "";
+            }
+
             console.info("bindWallet: ", wallet);
             var dic = {
                 "wallet": wallet
             }
             var response = await HttpClient.post<ResponseBindWallet>(this._base_url, this._bind_ton_wallet_path, "application/json", dic, this._token);
+            this.debugInfo.string = "";
             return response.wallet;
 
         } catch(error) {
@@ -246,8 +253,12 @@ export class GameManager extends Component {
     //取消绑定接口
     private async unbindWallet() {
         try {
+            if (this._token == "") {
+                return;
+            }
             console.info("unBindWallet");
             await HttpClient.post<ResponseUnBindWallet>(this._base_url, this._unbind_ton_wallet_path, "application/json", {}, this._token);
+            this.debugInfo.string = "";
         } catch(error) {
             console.error(error);
             this.debugInfo.string = "error: " + error.toString();
@@ -257,6 +268,10 @@ export class GameManager extends Component {
     //跳舞接受后积分统计接口
     private async danceEnd(addPoints: number) {
         try {
+            if (this._token == "") {
+                return 0;
+            }
+
             console.info("danceEnd: ", addPoints);
             var dic = {
                 "points": addPoints
@@ -264,6 +279,7 @@ export class GameManager extends Component {
             var response = await HttpClient.post<ResponseDanceEnd>(this._base_url, this._dance_end_path, "application/json", dic, this._token);
             this._user.points = response.points;
             this.pointsLbl.string = "Points: " + this._user.points.toString();
+            this.debugInfo.string = "";
         } catch(error) {
             console.error(error);
             this.debugInfo.string = "error: " + error.toString();
