@@ -117,7 +117,7 @@ export class GameManager extends Component {
 
     public onConnect() {
         if (this.isConnected()) {
-            this.connectUI.disconnect();
+            this.doDisconnect();
         } else {
             this.connectUI.openModal();
         }
@@ -167,6 +167,17 @@ export class GameManager extends Component {
         }
 
         return this.connectUI.connected;
+    }
+
+    private async doDisconnect() {
+        if (this.connectUI.connected) {
+            this.connectUI.disconnect();
+        } else {
+            await this.unbindWallet();
+            this._user.ton_wallet = "";
+            this.addressLbl.string = "Address: ";
+            this.connectLbl.string = "Connect";
+        }
     }
 
     // Get the wallet address after successful connection
