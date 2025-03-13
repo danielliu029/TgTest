@@ -12,7 +12,7 @@
 * 参考文档：https://cocosstudio.gitbook.io/cocosstudio-docs
 
 ## Demo Telegram APP
-https://t.me/MyTestGame029Bot/TgTest
+https://t.me/tg_test_029_bot/tgtest
 
 
 ## License
