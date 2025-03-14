@@ -13,6 +13,7 @@ interface ResponseLogin {
     code?: number;
 }
 
+
 interface User {
     tg_id: number; //telegram 用户唯一id
     username: string; 
@@ -25,6 +26,18 @@ interface User {
     acc_referral_points: number;  //累积推荐所获得的积分奖励
     acc_referral_number: number;  //累积推荐的人数
     last_interaction: number; //最后一次交互时间
+    first_dance_time: number; //每日第一次跳舞游戏时间
+    danced_count: number; //每日累积的跳舞次数，utc 0点清零
+    reward_dance_count: number; //奖励的跳舞次数，utc 0点清零
+    max_dance_count: number; //每日最大跳舞次数，utc 0点重新计算
+}
+
+interface DanceInfo {
+    tg_id: number; //telegram 用户唯一id
+    points: number;  //用户游戏累积积分
+    danced_count: number; //每日累积的跳舞次数，utc 0点清零
+    reward_dance_count: number; //奖励的跳舞次数，utc 0点清零
+    max_dance_count: number; //每日最大跳舞次数，utc 0点重新计算
 }
 
 interface ResponseBindWallet {
@@ -42,7 +55,7 @@ interface ResponseUnBindWallet {
 
 interface ResponseDanceEnd {
     status: string;
-    points?: number;
+    info?: DanceInfo;
     message?: string;
     code?: number;
 }
@@ -286,7 +299,7 @@ export class GameManager extends Component {
                 "points": addPoints
             }
             var response = await HttpClient.post<ResponseDanceEnd>(this._base_url, this._dance_end_path, "application/json", dic, this._token);
-            this._user.points = response.points;
+            this._user.points = response.info.points;
             this.pointsLbl.string = "Points: " + this._user.points.toString();
             this.debugInfo.string = "";
         } catch(error) {
