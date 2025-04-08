@@ -2,6 +2,7 @@ import { _decorator, Component, Label, Button, Node, randomRangeInt } from 'cc';
 import { TelegramWebApp, WebAppInitData } from '../cocos-telegram-miniapps/scripts/telegram-web';
 import { TonConnectUI, Address } from '@ton/cocos-sdk';
 import { HttpClient } from './HttpClient';
+import { CHAIN } from '@tonconnect/sdk'
 
 const { ccclass, property } = _decorator;
 
@@ -60,6 +61,51 @@ interface ResponseDanceEnd {
     code?: number;
 }
 
+interface OrderInfo {
+    order_id: string,
+    pid: number,
+    payment_address: string,
+    price: number,
+    type: number,
+    value: number,
+    network: number,
+    payload: string
+}
+
+interface ResponseCreateOrder {
+    status: string;
+    info?: OrderInfo;
+    message?: string;
+    code?: number;
+}
+
+interface ResponseCancelOrder {
+    status: string;
+    order_id?: string;
+    message?: string;
+    code?: number;
+}
+
+interface OrderInfo2 {
+    tg_id: number,
+    order_id: string,
+    pid: number,
+    price: number,
+    type: number,
+    value: number,
+    status: number,
+    trans_hash: string,
+    ton_wallet: string,
+    create_time: number
+}
+
+interface ResponseGetOrder {
+    status: string;
+    order?: OrderInfo2;
+    message?: string;
+    code?: number;
+}
+
 @ccclass('GameManager')
 export class GameManager extends Component {
     @property(Label)
@@ -80,6 +126,9 @@ export class GameManager extends Component {
     @property(Label)
     debugInfo: Label = null;
 
+    @property(Label)
+    payResult: Label = null;
+
     @property(Button)
     connectButton: Button = null;
 
@@ -97,8 +146,11 @@ export class GameManager extends Component {
     private _bind_ton_wallet_path: string = "/api/bindTonWallet"; //绑定ton 钱包接口
     private _unbind_ton_wallet_path: string = "/api/unbindTonWallet"; //解绑ton 钱包接口
     private _dance_end_path: string = "/api/danceEnd"; //跳舞结束统计积分接口
+    private _create_order_path: string = "/api/createOrder"; //创建支付订单接口
+    private _get_order_path: string = "/api/getOrder"; //获取订单接口
     private _user: User = null;
     private _token: string = "";
+    private _order_id: string = "";
 
     protected onLoad() {
         console.info("onLoad");
@@ -125,8 +177,26 @@ export class GameManager extends Component {
 
     }
 
+    private async test() {
+        try {
+            console.log("test start");
+            const path = "https://t.me/i/userpic/320/D0GITmcz1OqlW5RL3Ta64KKzEoIaPY3kGdGN4cCRf1U.svg";
+            const url = new URL(path);
+            const response = await fetch(url, {
+                // 必须显式允许跨域（如果目标域名不同）
+                mode: 'cors'
+              });
+            console.log(response);
+
+        } catch (error) {
+            console.error('网络请求错误:', error);
+
+            throw error;
+        }
+    }
+
     public onConnect() {
-        if (this.isConnected(true)) {
+        if (this.isConnected()) {
             this.doDisconnect();
         } else {
             this.connectUI.openModal();
@@ -137,6 +207,10 @@ export class GameManager extends Component {
         //for test
         this.danceEnd(200);
         //--
+    }
+
+    public onPayTest() {
+        this.payTest(4);
     }
 
     //Telegram小游戏分享
@@ -165,16 +239,10 @@ export class GameManager extends Component {
         });
     }
 
-    private isConnected(checkBindWallet:boolean): boolean {
+    private isConnected(): boolean {
         if (!this.connectUI) {
             console.error("ton ui not inited!");
             return false;
-        }
-
-        if (checkBindWallet) {
-            if (this._user != null && this._user.ton_wallet != "") {
-                return true;
-            }
         }
 
         return this.connectUI.connected;
@@ -184,7 +252,6 @@ export class GameManager extends Component {
         if (this.connectUI.connected) {
             this.connectUI.disconnect();
         } else {
-            await this.unbindWallet();
             this._user.ton_wallet = "";
             this.addressLbl.string = "Address: ";
             this.connectLbl.string = "Connect";
@@ -193,14 +260,13 @@ export class GameManager extends Component {
 
     // Get the wallet address after successful connection
     private async updateConnect() {
-        if (this.isConnected(false)) {
+        if (this.isConnected()) {
             //用户连接的钱包地址
             var strAddress: string = Address.parseRaw(this.connectUI.account.address).toString({ testOnly: false, bounceable: false });
-            this._user.ton_wallet = await this.bindTonWallet(strAddress);
+            this._user.ton_wallet =  strAddress;
             this.addressLbl.string = "Address: " + this._user.ton_wallet;
             this.connectLbl.string = "Connected";
         } else {
-            await this.unbindWallet();
             this._user.ton_wallet = "";
             this.addressLbl.string = "Address: ";
             this.connectLbl.string = "Connect";
@@ -219,7 +285,7 @@ export class GameManager extends Component {
         }
         
         this.addressLbl.string = "Address: " + this._user.ton_wallet;
-        this.connectLbl.string = this.isConnected(true) ? "Connected" : "Connect";
+        this.connectLbl.string = this.isConnected() ? "Connected" : "Connect";
         this.pointsLbl.string = "Points: " + this._user.points.toString();
     }
 
@@ -305,6 +371,82 @@ export class GameManager extends Component {
         } catch(error) {
             console.error(error);
             this.debugInfo.string = "error: " + error.toString();
+        }
+    }
+
+    //支付接口
+    private async payTest(pid:number) {
+        if (this.isConnected() == false) {
+            //没有链接ton钱包，先链接，然后再支付
+            this.connectUI.openModal();
+            return;
+        }
+
+        var wallet = Address.parseRaw(this.connectUI.account.address).toString({ testOnly: false, bounceable: false });
+
+        // 调用接口创建订单，获取order id
+        var dic = {
+            "wallet": wallet,
+            "pid": pid
+        }
+        var response = await HttpClient.post<ResponseCreateOrder>(this._base_url, this._create_order_path, "application/json", dic, this._token);
+        console.info(response);
+
+        if (response.info && response.info.order_id != "") {
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 600, //支付超时时间设置成10分钟
+                network: response.info.network == 1 ? CHAIN.MAINNET : CHAIN.TESTNET, //支付网络
+                messages: [
+                    {
+                        address: response.info.payment_address, //支付的目的地址
+                        amount: response.info.price.toString(), //支付金额
+                        payload: response.info.payload // payload with comment in body
+                    }
+                ]
+            };
+            
+            const result = await this.connectUI.sendTransaction(transaction);
+            if (result && result.boc != "") {
+                this.payResult.string = "boc: " + result.boc;
+                console.log(result.boc);
+                this.loopGetOrder(response.info.order_id)
+            } else {
+                this.payResult.string = "Pay Result: " + response.info.order_id + " 交易取消";
+            }
+        }
+    }
+
+    private loopGetOrder(order_id:string) {
+        this._order_id = order_id;
+        //间隔10s获取支付信息，最多循环6次，延迟10s执行
+        this.schedule(this.getOrderCallback, 10, 6, 10);
+    }
+
+    getOrderCallback() {
+        console.log("order id: ", this._order_id);
+        this.getOrder(this._order_id);
+    }
+
+    private async getOrder(order_id:string) {
+        var response = await HttpClient.get<ResponseGetOrder>(this._base_url, this._get_order_path, "", {"order_id": order_id}, this._token);
+        console.info(response);
+        if (response.order) {
+            if (response.order.status == 0) {
+                //未支付
+                this.payResult.string = "Pay Result: " + order_id + " 未支付";
+            } else if (response.order.status == 1) {
+                //支付成功
+                this.payResult.string = "Pay Result: " + order_id + " 支付成功";
+                this.unschedule(this.getOrderCallback);
+            } else if (response.order.status == 2) {
+                //支付失败
+                this.payResult.string = "Pay Result: " + order_id + " 支付失败";
+                this.unschedule(this.getOrderCallback);
+            } else {
+                //取消支付
+                this.payResult.string = "Pay Result: " + order_id + " 取消支付";
+                this.unschedule(this.getOrderCallback);
+            }
         }
     }
 }

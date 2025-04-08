@@ -29,7 +29,11 @@ export class HttpClient {
     public static async get<T>(baseUrl: string, path: string, contentType: string, params?: Record<string, any>, authToken?: string) {
         const url = new URL(path, baseUrl);
         if (params) {
-            params.forEach(([key, value]) => {
+            console.log(typeof(params));
+            console.log(params);
+
+            Object.entries(params).forEach(([key, value]) => {
+                console.log("key: " + key + " value: " + value);
                 url.searchParams.append(key, value as string);
             });
         }

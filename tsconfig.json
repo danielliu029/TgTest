@@ -4,6 +4,8 @@
 
   /* Add your custom configuration here. */
   "compilerOptions": {
-    "strict": false
+    "strict": false,
+    "target": "ES2017", // 或更高版本（ES2018/ES2020）
+    "lib": ["ES2017", "DOM"], // 显式声明支持的库
   }
 }
