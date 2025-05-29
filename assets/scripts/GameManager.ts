@@ -3,6 +3,9 @@ import { TelegramWebApp, WebAppInitData } from '../cocos-telegram-miniapps/scrip
 import { TonConnectUI, Address } from '@ton/cocos-sdk';
 import { HttpClient } from './HttpClient';
 import { CHAIN } from '@tonconnect/sdk'
+import { generateNonce } from './AuthService';
+import { WalletManager } from './WalletManager';
+const wallet = new WalletManager();
 
 const { ccclass, property } = _decorator;
 
@@ -22,15 +25,24 @@ interface User {
     last_name: string;
     photo_url: string;
     ton_wallet: string;
+    evm_wallet: string;
     points: number;  //用户游戏累积积分
     referral_tg_id: number; //推荐者tg id
+    gender: number;
+    invitation_rewards: number;
+    first_bind_wallet_rewards: number;
     acc_referral_points: number;  //累积推荐所获得的积分奖励
     acc_referral_number: number;  //累积推荐的人数
+    acc_real_referral_number: number;
+    vip: number;
+    base_power: number;
+    pay_power: number;
+    exp: number;
     last_interaction: number; //最后一次交互时间
     first_dance_time: number; //每日第一次跳舞游戏时间
-    danced_count: number; //每日累积的跳舞次数，utc 0点清零
-    reward_dance_count: number; //奖励的跳舞次数，utc 0点清零
-    max_dance_count: number; //每日最大跳舞次数，utc 0点重新计算
+    bind_wallet_count: number; 
+    daily_dance_count: number; 
+    dapp: number;
 }
 
 interface DanceInfo {
@@ -138,10 +150,11 @@ export class GameManager extends Component {
     protected connectUI: TonConnectUI = null;
 
 
-    private static _local_host: boolean = false;
-    private static _test_login: boolean = false;
+    private static _local_host: boolean = true;
+    private static _test_login: boolean = true;
     private _base_url: string = GameManager._local_host ? "http://127.0.0.1:5000" : "https://tgdev.neubeat.fi";
     private _login_path: string = "/api/auth/telegram"; //登录接口
+    private _dapp_login_path: string = "/api/auth/dapp"; //登录接口
     private _test_login_path: string = "/api/test/telegram"; //测试无需验证登录接口
     private _bind_ton_wallet_path: string = "/api/bindTonWallet"; //绑定ton 钱包接口
     private _unbind_ton_wallet_path: string = "/api/unbindTonWallet"; //解绑ton 钱包接口
@@ -155,7 +168,7 @@ export class GameManager extends Component {
     protected onLoad() {
         console.info("onLoad");
         if (GameManager._test_login) {
-            this.testLogin();
+            //this.testLogin();
             this.connectButton.enabled = false;
         } else {
             this.connectButton.enabled = true;
@@ -217,6 +230,34 @@ export class GameManager extends Component {
     public onShare() {
         console.info("share ");
         TelegramWebApp.Instance.share("https://t.me/MyTestGame029Bot/TgTest?start=invite_" + this._user.tg_id, "Invite you to play a very interesting game");
+    }
+
+    //evm 钱包登录
+    public async onLogin() {
+        // 1. 连接钱包
+        const isConnected = await wallet.connectWallet();
+        if (!isConnected) return;
+
+        // 2. 生成随机消息
+        const { message, nonce } = generateNonce();
+        console.info(message);
+        console.info( nonce);
+
+        // 3. 请求用户签名
+        const signature = await wallet.signMessage(message);
+        if (!signature) return;
+        console.log(signature);
+        console.log(wallet.userAddress);
+
+        // 调用接口创建订单，获取order id
+        var dic = {
+            "wallet": wallet.userAddress,
+            "message": message,
+            "signature": signature
+        }
+        var response = await HttpClient.post<ResponseLogin>(this._base_url, this._dapp_login_path, "application/json", dic);
+        console.info(response);
+        this.setUserInfo(response);
     }
 
     //初始化ton connect ui

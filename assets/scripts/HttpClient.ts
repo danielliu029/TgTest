@@ -54,6 +54,7 @@ export class HttpClient {
         if (authToken) {
             headers['Authorization'] = `Bearer ${authToken}`;
         }
+        console.log(data);
         return HttpClient.request<T>(url, {
             method: 'POST',
             headers: headers,

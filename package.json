@@ -5,6 +5,7 @@
     "version": "3.8.5"
   },
   "dependencies": {
-    "@ton/cocos-sdk": "^0.0.1-beta.1"
+    "@ton/cocos-sdk": "^0.0.1-beta.1",
+    "web3cocos": "github:schiznitz/web3cocos"
   }
 }
