@@ -5,6 +5,7 @@ import { HttpClient } from './HttpClient';
 import { CHAIN } from '@tonconnect/sdk'
 import { generateNonce } from './AuthService';
 import { WalletManager } from './WalletManager';
+import { ConfigLoader } from './ConfigLoader';
 const wallet = new WalletManager();
 
 const { ccclass, property } = _decorator;
@@ -118,6 +119,43 @@ interface ResponseGetOrder {
     code?: number;
 }
 
+interface BscOrderInfo {
+    order_id: string,
+    pid: number,
+    wallet: string,
+    price: number,
+    type: number,
+    value: number,
+    networkId: number
+}
+
+interface ResponseCreateBscOrder {
+    status: string;
+    info?: BscOrderInfo;
+    message?: string;
+    code?: number;
+}
+
+interface BscOrderInfo2 {
+    tg_id: number,
+    order_id: string,
+    pid: number,
+    price: number,
+    type: number,
+    value: number,
+    status: number,
+    trans_hash: string,
+    evm_wallet: string,
+    create_time: number
+}
+
+interface ResponseGetBscOrder {
+    status: string;
+    order?: BscOrderInfo2;
+    message?: string;
+    code?: number;
+}
+
 @ccclass('GameManager')
 export class GameManager extends Component {
     @property(Label)
@@ -147,10 +185,13 @@ export class GameManager extends Component {
     @property(Button)
     danceEndButton: Button = null;
 
+    @property(ConfigLoader)
+    config: ConfigLoader = null;
+
     protected connectUI: TonConnectUI = null;
 
 
-    private static _local_host: boolean = true;
+    private static _local_host: boolean = false;
     private static _test_login: boolean = true;
     private _base_url: string = GameManager._local_host ? "http://127.0.0.1:5000" : "https://tgdev.neubeat.fi";
     private _login_path: string = "/api/auth/telegram"; //登录接口
@@ -161,6 +202,8 @@ export class GameManager extends Component {
     private _dance_end_path: string = "/api/danceEnd"; //跳舞结束统计积分接口
     private _create_order_path: string = "/api/createOrder"; //创建支付订单接口
     private _get_order_path: string = "/api/getOrder"; //获取订单接口
+    private _create_bsc_order_path: string = "/api/createBscOrder"; //创建支付BSC订单接口
+    private _get_bsc_order_path: string = "/api/getBscOrder"; //获取BSC订单接口
     private _user: User = null;
     private _token: string = "";
     private _order_id: string = "";
@@ -223,7 +266,7 @@ export class GameManager extends Component {
     }
 
     public onPayTest() {
-        this.payTest(4);
+        this.payBscTest(4);
     }
 
     //Telegram小游戏分享
@@ -249,7 +292,6 @@ export class GameManager extends Component {
         console.log(signature);
         console.log(wallet.userAddress);
 
-        // 调用接口创建订单，获取order id
         var dic = {
             "wallet": wallet.userAddress,
             "message": message,
@@ -487,6 +529,67 @@ export class GameManager extends Component {
                 //取消支付
                 this.payResult.string = "Pay Result: " + order_id + " 取消支付";
                 this.unschedule(this.getOrderCallback);
+            }
+        }
+    }
+
+    //支付接口
+    private async payBscTest(pid:number) {
+        if (this._token == "") {
+            return;
+        }
+
+        // 调用接口创建BSC订单，获取order id
+        var dic = {
+            "pid": pid
+        }
+        var response = await HttpClient.post<ResponseCreateBscOrder>(this._base_url, this._create_bsc_order_path, "application/json", dic, this._token);
+        console.info(response);
+
+        var orderAddress = "";
+        if (response.info.networkId == 56) {
+            orderAddress = this.config.bsc["Order"]["address"]
+        } else {
+            orderAddress = this.config.bsctest["Order"]["address"]
+        }
+        var r = await wallet.pay(this.config.abiOrder, orderAddress, response.info.price, response.info.order_id);
+        if (r == true) {
+            this.loopGetBscOrder(response.info.order_id);
+        } else {
+            this.payResult.string = "Pay Result: 支付失败";
+        }
+    }
+
+    private loopGetBscOrder(order_id:string) {
+        this._order_id = order_id;
+        //间隔5s获取支付信息，最多循环10次，延迟5s执行
+        this.schedule(this.getBscOrderCallback, 5, 10, 5);
+    }
+
+    getBscOrderCallback() {
+        console.log("order id: ", this._order_id);
+        this.getBscOrder(this._order_id);
+    }
+
+    private async getBscOrder(order_id:string) {
+        var response = await HttpClient.get<ResponseGetBscOrder>(this._base_url, this._get_bsc_order_path, "", {"order_id": order_id}, this._token);
+        console.info(response);
+        if (response.order) {
+            if (response.order.status == 0) {
+                //未支付
+                this.payResult.string = "Pay Result: " + order_id + " 未支付";
+            } else if (response.order.status == 1) {
+                //支付成功
+                this.payResult.string = "Pay Result: " + order_id + " 支付成功";
+                this.unschedule(this.getBscOrderCallback);
+            } else if (response.order.status == 2) {
+                //支付失败
+                this.payResult.string = "Pay Result: " + order_id + " 支付失败";
+                this.unschedule(this.getBscOrderCallback);
+            } else {
+                //取消支付
+                this.payResult.string = "Pay Result: " + order_id + " 取消支付";
+                this.unschedule(this.getBscOrderCallback);
             }
         }
     }

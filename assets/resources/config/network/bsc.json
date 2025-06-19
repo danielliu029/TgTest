@@ -1,0 +1,30 @@
+{
+    "ApiUrl": "https://api.bscscan.com/api",
+    "RPC": "https://bsc.rpc.blxrbdn.com",
+	"Deployer": "0x2e2B29D314DB954Ee9d8c5ceD89fA5153a64a04e",
+	"Signer": "0x338549fd006214d13c44D6399D1590fc8D2B83C2",
+	"USDT": {
+		"contractName": "USDT",
+		"address": "0x55d398326f99059fF775485246999027B3197955"
+	},
+	"AirdropBeat": {
+		"contractName": "AirdropBeat",
+		"address": "0x4efe47293d511C5B343134B7ffB000a638Ea4fE0"
+	},
+	"Beat": {
+		"contractName": "Beat",
+		"address": "0xcf3232B85b43BCa90E51D38cc06Cc8bB8C8A3E36"
+	},
+	"AirdropToken": {
+		"contractName": "AirdropToken",
+		"address": "0xB0585C2835D53CdE47524aD6E0bD70C1de4Af567"
+	},
+	"AirdropTokenNew": {
+		"contractName": "AirdropTokenNew",
+		"address": "0x2965Fd559f3cde1cB60811ecA03d13E55d333aF7"
+	},
+	"AirdropTokens": {
+		"contractName": "AirdropTokens",
+		"address": "0xb479C8F90B3064879aA59d4FA5Bf8219BB0dD439"
+	}
+}
